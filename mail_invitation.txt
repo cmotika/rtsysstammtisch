@@ -1,0 +1,33 @@
+Hi %USERNAME!
+
+the next RtSys Stammtisch is going to happen *SOON*!
+
+
+It will take place
+
+       %DATE, 7:30 p.m.
+
+at
+       %VENUE, %ADDRESS.
+       http://maps.google.de/maps?q=%ADDRESSURL
+
+       
+Please make sure to *confirm* your attendance with the following quick link at latest *7* days
+before:       
+%CONFIRMURL
+
+Please keep in mind that we often are a large group and must reserve a table already 7 days in advance. We regularly get into trouble when people confirm their attencance late.
+
+The following %COUNT persons have already confirmed their attendance: 
+%WHOISTHERE
+      
+Do not forget to vote for the venue of the next Stammtisch already or submit your own venue suggestion.
+      
+Hope to see you soon! The RtSys Stammtisch is a great way to stay connected to what is going on in both, university and industry but also to keep together our fantastic RtSys group members! :)
+
+---
+%BASEURL
+RtSys Stammtisch, Est. 2016, (c) EmbRtSys Group of Kiel University, Germany
+
+This email was sent automatically. Please do *NOT* reply.
+

@@ -1,0 +1,29 @@
+Hi %USERNAME!
+
+the next RtSys Stammtisch is going to happen *TOMORROW*!
+
+	Thankworthy, you took responsibility to reserve the table. 
+	Please ensure that you have already reserved a table
+	for %COUNT (+/-1) persons or do it *NOW*!
+
+Recall that we will meet
+
+       %DATE, 7:30 p.m.
+
+at
+       %VENUE, %ADDRESS.
+       http://maps.google.de/maps?q=%ADDRESSURL
+
+The following %COUNT persons are also attending: 
+%WHOISTHERE
+
+Everybody is looking forward to see YOU and to have a very nice and valuable evening together!
+
+Have a safe trip!
+
+---
+%BASEURL
+RtSys Stammtisch, Est. 2016, (c) EmbRtSys Group of Kiel University, Germany
+
+This email was sent automatically. Please do *NOT* reply.
+

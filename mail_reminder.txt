@@ -1,0 +1,31 @@
+Hi %USERNAME!
+
+the next RtSys Stammtisch is going to happen *TOMORROW*!
+
+
+If you have not confirmed your attendance yet, please hurry to do so *NOW* with the following link:
+%CONFIRMURL
+Keep in mind that the table often must be reserved 7 days in advance and that we regularly get into trouble when people confirm their attendance late. 
+
+
+Recall that we will meet
+
+       %DATE, 7:30 p.m.
+
+at
+       %VENUE, %ADDRESS.
+       http://maps.google.de/maps?q=%ADDRESSURL
+
+The following %COUNT persons are also attending: 
+%WHOISTHERE
+
+Everybody is looking forward to see YOU and to have a very nice and valuable evening together!
+
+Have a safe trip!
+
+---
+%BASEURL
+RtSys Stammtisch, Est. 2016, (c) EmbRtSys Group of Kiel University, Germany
+
+This email was sent automatically. Please do *NOT* reply.
+

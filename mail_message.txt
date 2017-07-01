@@ -1,0 +1,13 @@
+Hi %USERNAME!
+
+here is a message regarding the RtSys Stammtisch from %SENDER:
+
+%MESSAGE
+      
+
+---
+%BASEURL
+RtSys Stammtisch, Est. 2016, (c) EmbRtSys Group of Kiel University, Germany
+
+This email was sent automatically. Please do *NOT* reply.
+

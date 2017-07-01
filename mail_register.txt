@@ -1,0 +1,30 @@
+Hi %USERNAME!
+
+%INVITER has invited _YOU_ to the prestigious RtSys Stammtisch! We will meet once a month in a different venue, i.e., a restaurant or bar, of Kiel.
+
+Please log on with your display name or email address and your password '%PWD' under the following address:
+%BASEURL
+
+You can quick-login using the following link:
+%BASEURL?cmd=login&user=%EMAIL&pwd=%PWD
+Please be aware that your plain text password will be part of the URL in this case!
+
+Please keep your password in a safe place. The password is not stored on site (only its hash). In case you lose your password, you need to find a person of the RtSys group who resets your password.
+
+What can you do there?
+1. You should confirm you are going to the next Stammtisch!
+2. You can see who else is going and where the Stammtisch takes place.
+3. You can vote for the next venue.
+4. You can suggest a venue of your like.
+5. You can see all past venues.
+6. You can choose a different login/display name (the default is an abbreviation of your email address).
+7. You can change your password.
+
+Hope to see you soon! The RtSys Stammtisch is a great way to stay connected to what is going on in both, university and industry but also to keep together our fantastic RtSys group members! :)
+
+---
+%BASEURL
+RtSys Stammtisch, Est. 2016, (c) EmbRtSys Group of Kiel University, Germany
+
+This email was sent automatically by request of IP %IPADDRESS. Please do *NOT* reply.
+

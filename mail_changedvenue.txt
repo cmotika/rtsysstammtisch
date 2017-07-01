@@ -1,0 +1,19 @@
+Hi %USERNAME!
+
+the next RtSys Stammtisch has changed venue!
+
+It will *NOW* take place at
+
+       %VENUE, %ADDRESS.
+       http://maps.google.de/maps?q=%ADDRESSURL
+
+The reason for this required venue change is the following:
+%REASON
+       
+
+---
+%BASEURL
+RtSys Stammtisch, Est. 2016, (c) EmbRtSys Group of Kiel University, Germany
+
+This email was sent automatically. Please do *NOT* reply.
+
