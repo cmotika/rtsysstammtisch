@@ -1,5 +1,7 @@
 <?php
 
+header('Content-Type: text/html; charset=utf-8');
+
   // ===========================================================================
   // ==                               G E N E R A L                           ==
   // ===========================================================================
@@ -15,13 +17,15 @@
      global $DBUSER;
      global $DBPWD;
      global $DBURL;
-     //echo 'TYRING TO ACCESS DB '.$DBURL. " with user ".$DBUSER." and pwd ".$DBPWD;
-	 if (!@mysql_connect($DBURL, $DBUSER, $DBPWD)) {
-		die(@mysql_error());
+     global $MYSQLIOBJ; 
+    //echo 'TYRING TO ACCESS DB '.$DBURL. " with user ".$DBUSER." and pwd ".$DBPWD;
+	 if (!@mysqli_connect($DBURL, $DBUSER, $DBPWD)) {
+		die(@mysqli_error());
 	 }
-     $dbs = @mysql_connect($DBURL, $DBUSER, $DBPWD);
-//     $dbs = mysql_connect($DBURL);
+     $dbs = @mysqli_connect($DBURL, $DBUSER, $DBPWD);
+//     $dbs = mysqli_connect($DBURL);
      if(!$dbs) { echo '-CANNOT ACCESS DATABASESERVER, PLEASE CONTACT THE SYSTEM ADMINISTARTOR AT '.$WEBMASTER; exit;}
+     $MYSQLIOBJ = $dbs;
      return $dbs;
  }
 
@@ -168,9 +172,10 @@ in the server error log.</p>
 
  function updateMeetingDate($mid, $newdate) {
   	       // update meeting: remember that we have invited
+		   global $MYSQLIOBJ;
 		   $query = "UPDATE meeting SET date = '".$newdate."' WHERE mid = '".$mid."'";
 		   printf($query);
-   	       $result = mysql_query($query);
+   	       $result = mysqli_query($MYSQLIOBJ, $query);
  }
 
 
@@ -179,6 +184,7 @@ in the server error log.</p>
     printf("<BR><BR>Running invite cron...");
  	if (isInvitationDay($TODAY) || $override) {
  		printf("<BR>isInvitationDay:true");
+		global $MYSQLIOBJ;
  		//exit;
  		// okay we get the last meeting with the same day from DB
  		$mid = getLastMeetingWithNoInvitation($TODAY, $override);
@@ -187,9 +193,9 @@ in the server error log.</p>
  			// Go thru all users and send them the invitation
 		   $query = "SELECT uid FROM user";
    		   //printf($query."<BR>");
-   	 	   $result = mysql_query($query);
+   	 	   $result = mysqli_query($MYSQLIOBJ, $query);
    		   if ($result) {
-				while($row_sections = mysql_fetch_array($result)) {
+				while($row_sections = mysqli_fetch_array($result)) {
 		    	  	$uid = $row_sections['uid'];
 		    	  	printf("<BR>Sending invitation mail to uid=:".$uid);
 		    	  	sendEmailInvitation($uid, $mid);
@@ -198,7 +204,7 @@ in the server error log.</p>
   	       // update meeting: remember that we have invited
 		   $query = "UPDATE meeting SET invited = '".time()."' WHERE mid = '".$mid."'";
 		   printf($query);
-   	       $result = mysql_query($query);
+   	       $result = mysqli_query($MYSQLIOBJ, $query);
  		}
  	} else {
  		printf("<BR>isInvitationDay:false");
@@ -207,6 +213,8 @@ in the server error log.</p>
 
  function remind() {
  	global $TODAY;
+        global $MYSQLIOBJ;
+
     printf("<BR><BR>Running invite cron...");
  	if (isReminderDay($TODAY)) {
  		printf("<BR>isReminderDay:true");
@@ -218,9 +226,9 @@ in the server error log.</p>
  			// Go thru all users and send them the reminder
 		   $query = "SELECT uid FROM user";
    		   //printf($query."<BR>");
-   	 	   $result = mysql_query($query);
+   	 	   $result = mysqli_query($MYSQLIOBJ, $query);
    		   if ($result) {
-		  	   while($row_sections = mysql_fetch_array($result)) {
+		  	   while($row_sections = mysqli_fetch_array($result)) {
 		    	  	$uid = $row_sections['uid'];
 		    	  	printf("<BR>Sending reminder mail to uid=:".$uid);
 		    	  	sendEmailReminder($uid, $mid);
@@ -229,7 +237,7 @@ in the server error log.</p>
   	       // update meeting: remember that we have reminded
 		   $query = "UPDATE meeting SET reminded = '".time()."' WHERE mid = '".$mid."'";
 		   printf($query);
-   	       $result = mysql_query($query);
+   	       $result = mysqli_query($MYSQLIOBJ, $query);
  		}
  	} else {
  		printf("<BR>isReminderDay:false");
@@ -239,12 +247,14 @@ in the server error log.</p>
 
  function changeVenueEmail($reason) {
  		   global $mid;
+    		   global $MYSQLIOBJ;
+
  			// Go thru all users and send them the invitation
  		   $query = "SELECT uid FROM user";
     		   //printf($query."<BR>");
-    	 	   $result = mysql_query($query);
+    	 	   $result = mysqli_query($MYSQLIOBJ, $query);
     		   if ($result) {
- 				while($row_sections = mysql_fetch_array($result)) {
+ 				while($row_sections = mysqli_fetch_array($result)) {
  		    	  	$uid = $row_sections['uid'];
  		    	  	//printf("<BR>Sending changed venue mail to uid=:".$uid);
  		    	  	sendEmailChangeVenue($uid, $mid, $reason);
@@ -257,6 +267,7 @@ in the server error log.</p>
  // choose a suggested venue if
  function choose($override) {
  	global $TODAY;
+     global $MYSQLIOBJ;
     printf("<BR><BR>Running choose cron...");
  	if (isChooseDay($TODAY) || $override) {
  		printf("<BR>isChooseDay:true");
@@ -271,11 +282,11 @@ in the server error log.</p>
  		     // insert the sid
 		     $query = "UPDATE meeting SET sid = '".$sid."' WHERE mid = '".$mid."'";
 		     printf($query);
-	   	     $result = mysql_query($query);
+	   	     $result = mysqli_query($MYSQLIOBJ, $query);
  		     // tell the suggestion that it has been "consumed" now
 		     $query = "UPDATE suggestion SET chosen = '".$mid."' WHERE sid = '".$sid."'";
 		     printf($query);
-	   	     $result = mysql_query($query);
+	   	     $result = mysqli_query($MYSQLIOBJ, $query);
  		}
  	} else {
  		printf("<BR>isChooseDay:false");
@@ -286,6 +297,8 @@ in the server error log.</p>
  function getLastMeetingWithNoLinkedSuggestion($today) {
     global $CHOOSEVENUE_DAYSBEFORE;
     global $ONEDAY;
+     global $MYSQLIOBJ;
+
     $meetingDay = $today + ($CHOOSEVENUE_DAYSBEFORE*$ONEDAY);
     $meetingDayFrom = $meetingDay - $ONEDAY;
     $meetingDayTo = $meetingDay + $ONEDAY;
@@ -293,10 +306,10 @@ in the server error log.</p>
     //$query = "SELECT mid FROM meeting WHERE sid < '1' and date > ".$meetingDayFrom." and date < ".$meetingDayTo;
     $query = "SELECT mid FROM meeting WHERE sid < '1' and date > ".date("U")." ORDER BY date ASC";
     //printf($query);
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
     if ($result) {
-    //if (mysql_num_rows($result) > 0) {
-        $row = mysql_fetch_array($result,MYSQL_ASSOC);
+    //if (mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
         $e = implode(" ",$row);
         $f = explode(" ",$e);
         $backvalue = $f[0];
@@ -307,6 +320,8 @@ in the server error log.</p>
  function getLastMeetingWithNoInvitation($today, $override) {
     global $SENDINVITATION_DAYSBEFORE;
     global $ONEDAY;
+     global $MYSQLIOBJ;
+
     if ($SENDINVITATION_DAYSBEFORE < 0) {
     	return -1;
     }
@@ -319,10 +334,10 @@ in the server error log.</p>
 	    $query = "SELECT mid FROM meeting WHERE date > ".date("U")." ORDER BY date ASC";
     }
     //printf($query);
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
     if ($result) {
-    //if (mysql_num_rows($result) > 0) {
-        $row = mysql_fetch_array($result,MYSQL_ASSOC);
+    //if (mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
         $e = implode(" ",$row);
         $f = explode(" ",$e);
         $backvalue = $f[0];
@@ -333,6 +348,8 @@ in the server error log.</p>
  function getLastMeetingWithNoReminder($today) {
     global $SENDREMINDER_DAYSBEFORE;
     global $ONEDAY;
+     global $MYSQLIOBJ;
+
     if ($SENDREMINDER_DAYSBEFORE < 0) {
     	return -1;
     }
@@ -342,10 +359,10 @@ in the server error log.</p>
     $backvalue = -1;
     $query = "SELECT mid FROM meeting WHERE reminded < '1' and date > ".$meetingDayFrom." and date < ".$meetingDayTo;
     //printf($query);
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
     if ($result) {
-    //if (mysql_num_rows($result) > 0) {
-        $row = mysql_fetch_array($result,MYSQL_ASSOC);
+    //if (mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
         $e = implode(" ",$row);
         $f = explode(" ",$e);
         $backvalue = $f[0];
@@ -414,12 +431,13 @@ function getNextMeetingTimeStampHelper() {
 
 
 function getNextMeetingHelper($calledagain) {
+   global $MYSQLIOBJ;
    global $ONEDAY;
    global $TODAY;
    // first search database
-	$result = mysql_query("SELECT mid,date FROM meeting ORDER BY date DESC");
+	$result = mysqli_query($MYSQLIOBJ,  "SELECT mid,date FROM meeting ORDER BY date DESC");
     if ($result) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $date = $f[1];
@@ -439,7 +457,7 @@ function getNextMeetingHelper($calledagain) {
    $query = "INSERT INTO `meeting` (date)
                     VALUES ('".$nextmeetingtimestamp."')";
    //printf($query."<BR>");
-   $result = mysql_query($query);
+   $result = mysqli_query($MYSQLIOBJ, $query);
 
    // now call this function again, it should find the DB value then
    return getNextMeetingHelper(true);
@@ -504,30 +522,33 @@ function isMeetingDayWrapper($testDay) {
 
 
  function rate($mid, $uid, $rating) {
+         global $MYSQLIOBJ;
+
     $uid = intval($uid);
     $mid = intval($mid);
     $rating = intval($rating);
 
     $query = "DELETE FROM `rating` WHERE uid = '$uid' and mid = '$mid'";
     //printf($query."<BR>");
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
 
     if ($rating > -1) {
     	$query = "INSERT INTO `rating` (mid, uid, rating, timestamp)
                  VALUES ('".$mid."','".$uid."','".$rating."','".date("U")."')";
        	//printf($query."<BR>");
-    	$result = mysql_query($query);
+    	$result = mysqli_query($MYSQLIOBJ, $query);
     }
  }
 
  function getOwnRating($uid, $mid) {
+    global $MYSQLIOBJ;
     $query = "SELECT rating FROM `rating` WHERE mid = '".$mid."' and uid = '".$uid."'";
     //printf($query."<BR>");
     $rating = -1; // no rating
-    $result = mysql_query($query);
-    $records = mysql_num_rows($result);
+    $result = mysqli_query($MYSQLIOBJ, $query);
+    $records = mysqli_num_rows($result);
     if ($records > 0) {
- 	   $row_sections = mysql_fetch_array($result);
+ 	   $row_sections = mysqli_fetch_array($result);
   	   $rating = $row_sections['rating'];
  	   if ($rating == NULL) {
 	 	    $rating = -1;
@@ -537,13 +558,14 @@ function isMeetingDayWrapper($testDay) {
  }
 
  function getRating($mid) {
+    global $MYSQLIOBJ;
     $query = "SELECT AVG(rating) AS averageRating FROM `rating` WHERE mid = '".$mid."'";
     //printf($query."<BR>");
     $rating = -1; // no rating
-    $result = mysql_query($query);
-    $records = mysql_num_rows($result);
+    $result = mysqli_query($MYSQLIOBJ, $query);
+    $records = mysqli_num_rows($result);
     if ($records > 0) {
- 	   $row_sections = mysql_fetch_array($result);
+ 	   $row_sections = mysqli_fetch_array($result);
   	   $rating = $row_sections['averageRating'];
  	   if ($rating == NULL) {
 	 	    $rating = -1;
@@ -553,13 +575,14 @@ function isMeetingDayWrapper($testDay) {
 }
 
 function getRatingCount($mid) {
-    $query = "SELECT COUNT(rating) AS countRating FROM `rating` WHERE mid = '".$mid."'";
+   global $MYSQLIOBJ;
+   $query = "SELECT COUNT(rating) AS countRating FROM `rating` WHERE mid = '".$mid."'";
     //printf($query."<BR>");
     $rating = -1; // no rating
-    $result = mysql_query($query);
-    $records = mysql_num_rows($result);
+    $result = mysqli_query($MYSQLIOBJ, $query);
+    $records = mysqli_num_rows($result);
     if ($records > 0) {
- 	   $row_sections = mysql_fetch_array($result);
+ 	   $row_sections = mysqli_fetch_array($result);
   	   $rating = $row_sections['countRating'];
  	   if ($rating == NULL) {
 	 	    $rating = -1;
@@ -572,6 +595,7 @@ function getRatingCount($mid) {
 
 
  function confirm($uid, $mid, $confirm, $phone, $comment) {
+    global $MYSQLIOBJ;
     $uid = intval($uid);
     $mid = intval($mid);
     if ($phone != 1) {
@@ -582,38 +606,40 @@ function getRatingCount($mid) {
 	if (!$confirm) {
 	    $query = "DELETE FROM `confirm` WHERE uid = '$uid' and mid = '$mid'";
     	//printf($query."<BR>");
-	    $result = mysql_query($query);
+	    $result = mysqli_query($MYSQLIOBJ, $query);
 	}
 	if ($confirm) {
 		if (confirmed($uid, $mid)) {
 		    $query1 = "UPDATE `confirm` SET phone = '".$phone."' WHERE uid = '".$uid."' AND mid = '".$mid."'";
 		    //$query2 = "UPDATE `confirm` SET comment = '".$comment."' WHERE uid = '".$uid."' AND mid = '".$mid."'";
-	    	$result = mysql_query($query1);
-	    	//$result = mysql_query($query2);
+	    	$result = mysqli_query($MYSQLIOBJ, $query1);
+	    	//$result = mysqli_query($MYSQLIOBJ, $query2);
 		} else {
 	    	$query = "INSERT INTO `confirm` (mid, uid, confirmed, phone, comment)
         	         VALUES ('".$mid."','".$uid."','".date("U")."','".$phone."','".$comment."')";
     	   	//printf($query."<BR>");
-	    	$result = mysql_query($query);
+	    	$result = mysqli_query($MYSQLIOBJ, $query);
 		}
     }
  }
 
 
  function cleanSessions() {
- 	global $DELETESESSION;
+      global $MYSQLIOBJ;
+	global $DELETESESSION;
  	$timebarrier = date("U") - $DELETESESSION;
     $query = "DELETE FROM `session` WHERE created < '$timebarrier'";
     //printf($query."<BR>");
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
  }
 
 
  function confirmed($uid, $mid) {
-   $uid = intval($uid);
+        global $MYSQLIOBJ;
+$uid = intval($uid);
    $mid = intval($mid);
-   $result = mysql_query("SELECT uid FROM confirm WHERE mid = '".$mid."' and uid = '".$uid."'");
-   if (mysql_num_rows($result) > 0) {
+   $result = mysqli_query($MYSQLIOBJ, "SELECT uid FROM confirm WHERE mid = '".$mid."' and uid = '".$uid."'");
+   if (mysqli_num_rows($result) > 0) {
        return true;
    }
    return false;
@@ -621,10 +647,11 @@ function getRatingCount($mid) {
 
 
  function confirmedWithPhone($uid, $mid) {
+   global $MYSQLIOBJ;
    $uid = intval($uid);
    $mid = intval($mid);
-   $result = mysql_query("SELECT uid FROM confirm WHERE mid = '".$mid."' and uid = '".$uid."' and phone = '1'");
-   if (mysql_num_rows($result) > 0) {
+   $result = mysqli_query($MYSQLIOBJ, "SELECT uid FROM confirm WHERE mid = '".$mid."' and uid = '".$uid."' and phone = '1'");
+   if (mysqli_num_rows($result) > 0) {
        return true;
    }
    return false;
@@ -634,14 +661,14 @@ function getRatingCount($mid) {
 
  function whoIsThere($mid) {
    global $uid;
-
+   global $MYSQLIOBJ;
    $query = "SELECT uid,phone,comment FROM confirm WHERE mid = '".$mid."' ORDER BY confirmed ASC";
    //printf($query."<BR>");
-   $result = mysql_query($query);
+   $result = mysqli_query($MYSQLIOBJ, $query);
    if ($result) {
  	 printf("<table cellspacing='0' cellpadding='0' border='0'>");
 	 $i = 0;
-	 while($row_sections = mysql_fetch_array($result)) {
+	 while($row_sections = mysqli_fetch_array($result)) {
 	    $otheruid = $row_sections['uid'];
 	    $phone = $row_sections['phone'];
 	    $comment = $row_sections['comment'];
@@ -679,11 +706,12 @@ function getRatingCount($mid) {
 
 
  function whoIsRegistered() {
+   global $MYSQLIOBJ;
    $backvalue = "";
    $query = "SELECT uid FROM user WHERE name != 'deleted' and lastseen > '10' ORDER BY name ASC";
-   $result = mysql_query($query);
+   $result = mysqli_query($MYSQLIOBJ, $query);
    if ($result) {
-	 while($row_sections = mysql_fetch_array($result)) {
+	 while($row_sections = mysqli_fetch_array($result)) {
 	    $uid = $row_sections['uid'];
         $name = getName($uid);
         if (strlen($backvalue) > 0) {
@@ -697,11 +725,12 @@ function getRatingCount($mid) {
 
 
   function whoIsRegisteredCount() {
+    global $MYSQLIOBJ;
     $query = "SELECT uid FROM user WHERE name != 'deleted' and lastseen > '10' ";
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
     $i = 0;
     if ($result) {
- 	 while($row_sections = mysql_fetch_array($result)) {
+ 	 while($row_sections = mysqli_fetch_array($result)) {
  	    $i = $i + 1;
  	 }
     }
@@ -709,11 +738,12 @@ function getRatingCount($mid) {
   }
 
   function whoIsInvitedCount() {
+    global $MYSQLIOBJ;
     $query = "SELECT uid FROM user WHERE name != 'deleted' and lastseen < '10' ";
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
     $i = 0;
     if ($result) {
- 	 while($row_sections = mysql_fetch_array($result)) {
+ 	 while($row_sections = mysqli_fetch_array($result)) {
  	    $i = $i + 1;
  	 }
     }
@@ -722,11 +752,12 @@ function getRatingCount($mid) {
 
 
  function whoIsThereEmail($mid) {
+   global $MYSQLIOBJ;
    $backvalue = "";
    $query = "SELECT uid FROM confirm WHERE mid = '".$mid."' ORDER BY confirmed ASC";
-   $result = mysql_query($query);
+   $result = mysqli_query($MYSQLIOBJ, $query);
    if ($result) {
-	 while($row_sections = mysql_fetch_array($result)) {
+	 while($row_sections = mysqli_fetch_array($result)) {
 	    $uid = $row_sections['uid'];
         $name = getName($uid);
         if (strlen($backvalue) > 0) {
@@ -740,11 +771,12 @@ function getRatingCount($mid) {
 
 
   function whoIsThereCount($mid) {
+    global $MYSQLIOBJ; 
     $query = "SELECT uid FROM confirm WHERE mid = '".$mid."' ORDER BY confirmed ASC";
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
     $i = 0;
     if ($result) {
- 	 while($row_sections = mysql_fetch_array($result)) {
+ 	 while($row_sections = mysqli_fetch_array($result)) {
  	    $i = $i + 1;
  	 }
     }
@@ -752,11 +784,12 @@ function getRatingCount($mid) {
   }
 
   function whoReservesTableCount($mid) {
+    global $MYSQLIOBJ;
     $query = "SELECT uid FROM confirm WHERE mid = '".$mid."' AND phone > '0' ORDER BY confirmed ASC";
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
     $i = 0;
     if ($result) {
- 	 while($row_sections = mysql_fetch_array($result)) {
+ 	 while($row_sections = mysqli_fetch_array($result)) {
  	    $i = $i + 1;
  	 }
     }
@@ -765,11 +798,12 @@ function getRatingCount($mid) {
 
 
 function getSuggestionName($sid) {
+   global $MYSQLIOBJ;
    $mid = intval($mid);
    $backvalue = -1;
-   $result = mysql_query("SELECT name FROM suggestion WHERE sid = '".$sid."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT name FROM suggestion WHERE sid = '".$sid."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -777,11 +811,12 @@ function getSuggestionName($sid) {
    return $backvalue;
 }
 function getSuggestionAddress($sid) {
+   global $MYSQLIOBJ; 
    $mid = intval($mid);
    $backvalue = -1;
-   $result = mysql_query("SELECT address FROM suggestion WHERE sid = '".$sid."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT address FROM suggestion WHERE sid = '".$sid."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -791,11 +826,12 @@ function getSuggestionAddress($sid) {
 
 
 function getMeetingLocationSid($mid) {
+   global $MYSQLIOBJ;
    // if any location is yet chosen!
    $mid = intval($mid);
-   $result = mysql_query("SELECT sid FROM meeting WHERE mid = '".$mid."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT sid FROM meeting WHERE mid = '".$mid."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $sid = $f[0];
@@ -849,11 +885,12 @@ function getMeetingLocationLabel($mid) {
 
 
 function getMeetingDate($mid) {
+   global $MYSQLIOBJ; 
    $mid = intval($mid);
    $backvalue = -1;
-   $result = mysql_query("SELECT date FROM meeting WHERE mid = '".$mid."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT date FROM meeting WHERE mid = '".$mid."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -943,13 +980,14 @@ function photoURL($mid, $i) {
 
 function getPastDates() {
    global $uid;
+   global $MYSQLIOBJ;
    $query = "SELECT mid,date FROM meeting ORDER BY date DESC";
    //printf($query."<BR>");
-   $result = mysql_query($query);
+   $result = mysqli_query($MYSQLIOBJ, $query);
    if ($result) {
  	 printf("<table border='0' cellspacing='100'>");
 	 $i = 0;
-	 while($row_sections = mysql_fetch_array($result)) {
+	 while($row_sections = mysqli_fetch_array($result)) {
 	    $mid = $row_sections['mid'];
 	    $date = $row_sections['date'];
 	    $dateString = date('d.m.Y', $date);
@@ -1127,11 +1165,12 @@ exit;
   // ===========================================================================
 
   function resetPwd($uid, $otheruser) {
+    global $MYSQLIOBJ; 
     if (isAdmin($uid)) {
 	    $otheruid = getUID($otheruser);
 		if ($otheruid > 0) {
 		    $query = "UPDATE user SET pwd = '' WHERE uid = '".$otheruid."'";
-  		    mysql_query($query);
+  		    mysqli_query($MYSQLIOBJ, $query);
   		    return true;
 		}
 	}
@@ -1141,13 +1180,14 @@ exit;
 
 
  function getUIDByMail($email) {
+   global $MYSQLIOBJ;
    $backvalue = -1;
    if ($email == "email") {
    		return -1;
    }
-   $result = mysql_query("SELECT uid FROM user WHERE email LIKE  '".$email."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT uid FROM user WHERE email LIKE  '".$email."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -1156,13 +1196,14 @@ exit;
  }
 
  function getUID($name) {
+   global $MYSQLIOBJ; 
    $backvalue = -1;
    if ($user == "user") {
    		return -1;
    }
-   $result = mysql_query("SELECT uid FROM user WHERE name LIKE  '".$name."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT uid FROM user WHERE name LIKE  '".$name."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -1171,11 +1212,12 @@ exit;
  }
 
  function getName($uid) {
+   global $MYSQLIOBJ;
    $uid = intval($uid);
    $backvalue = -1;
-   $result = mysql_query("SELECT name FROM user WHERE uid = '".$uid."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT name FROM user WHERE uid = '".$uid."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -1184,11 +1226,12 @@ exit;
  }
 
  function getEmail($uid) {
-   $uid = intval($uid);
+   global $MYSQLIOBJ; 
+$uid = intval($uid);
    $backvalue = -1;
-   $result = mysql_query("SELECT email FROM user WHERE uid = '".$uid."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT email FROM user WHERE uid = '".$uid."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -1197,9 +1240,10 @@ exit;
  }
 
   function isAdmin($uid) {
+    global $MYSQLIOBJ;
     $uid = intval($uid);
-    $result = mysql_query("SELECT admin FROM user WHERE uid = '".$uid."' and admin = '1'");
-    if (mysql_num_rows($result) > 0) {
+    $result = mysqli_query($MYSQLIOBJ, "SELECT admin FROM user WHERE uid = '".$uid."' and admin = '1'");
+    if (mysqli_num_rows($result) > 0) {
     	return true;
     }
     return false;
@@ -1211,25 +1255,29 @@ exit;
  }
 
  function updateName($uid, $name) {
+   global $MYSQLIOBJ; 
    $uid = intval($uid);
    if ($name == "name") {
    		return -1;
    }
    $query = "UPDATE user SET name = '".$name."' WHERE uid = '".$uid."'";
-   mysql_query($query);
+   mysqli_query($MYSQLIOBJ, $query);
  }
 
  function updateEmail($uid, $email) {
+   global $MYSQLIOBJ;
    $uid = intval($uid);
+
    if ($email == "email") {
    		return -1;
    }
    $query = "UPDATE user SET email = '".$email."' WHERE uid = '".$uid."'";
-   mysql_query($query);
+   mysqli_query($MYSQLIOBJ, $query);
  }
 
 
  function getPwd($uid) {
+   global $MYSQLIOBJ; 
    $uid = intval($uid);
    $backvalue = -1;
    if ($uid == "uid") {
@@ -1237,9 +1285,9 @@ exit;
    }
    $query = "SELECT pwd FROM user WHERE uid = '".$uid."'";
    //printf("query:".$query."<BR>");
-   $result = mysql_query($query);
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, $query);
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -1249,53 +1297,58 @@ exit;
 
 
  function updatePwd($uid, $pwd) {
+   global $MYSQLIOBJ;
    $uid = intval($uid);
    if ($pwd == "pwd") {
    		return -1;
    }
    $query = "UPDATE user SET pwd = '".md5($pwd)."' WHERE uid = '".$uid."'";
-   mysql_query($query);
+   mysqli_query($MYSQLIOBJ, $query);
  }
 
  function removeAccount($uid) {
+   global $MYSQLIOBJ; 
    $uid = intval($uid);
    $query = "UPDATE user SET pwd = '".getRND(20)."' WHERE uid = '".$uid."'";
-   mysql_query($query);
+   mysqli_query($MYSQLIOBJ, $query);
    $query = "UPDATE user SET name = 'deleted' WHERE uid = '".$uid."'";
-   mysql_query($query);
+   mysqli_query($MYSQLIOBJ, $query);
    $query = "UPDATE user SET email = '' WHERE uid = '".$uid."'";
-   mysql_query($query);
+   mysqli_query($MYSQLIOBJ, $query);
  }
 
  function updateLastSeen($uid) {
-        		 // update lastseen value
+        		 global $MYSQLIOBJ; 
+  			// update lastseen value
 	   		     $query = "UPDATE user SET lastseen = '".time()."' WHERE uid = '".$uid."'";
 	   		     //printf($query);
-	   	   	     $result = mysql_query($query);
+	   	   	     $result = mysqli_query($MYSQLIOBJ, $query);
  }
 
  function updateIP($s) {
   	    global $IP;
   	    global $browser;
-        $query = "UPDATE session SET ip = '".$IP."' WHERE sessionid = '".$s."'";
+        global $MYSQLIOBJ; 
+	$query = "UPDATE session SET ip = '".$IP."' WHERE sessionid = '".$s."'";
         //printf($query);
         //exit;
-        $result = mysql_query($query);
+        $result = mysqli_query($MYSQLIOBJ, $query);
         $query = "UPDATE session SET browser = '".$browser."' WHERE sessionid = '".$s."'";
         //printf($query);
         //exit;
-        $result = mysql_query($query);
+        $result = mysqli_query($MYSQLIOBJ, $query);
  }
 
 
  function login($uid, $pwd) {
+global $MYSQLIOBJ;
    $uid = intval($uid);
    // clean old sessions
    cleanSessions();
 
-   $result = mysql_query("SELECT pwd FROM user WHERE uid = '".$uid."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT pwd FROM user WHERE uid = '".$uid."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        //printf($pwd." -login2-> ".md5($pwd)." == ".$f[0]."<BR>");
@@ -1313,22 +1366,24 @@ exit;
 
 
   function logout($uid) {
+global $MYSQLIOBJ;
 	    $uid = intval($uid);
    	    // delete old sessions
   	    $query = "DELETE FROM `session` WHERE uid = '$uid'";
-  		$result = mysql_query($query);
+            $result = mysqli_query($MYSQLIOBJ, $query);
   }
 
   // used for mailing
   function updateSessionNoLogout($uid, $s) {
+		global $MYSQLIOBJ;
   		if ($s != "") {
 			// insert new session
 	    	$query = "INSERT INTO `session` (uid, sessionid, created)
                  VALUES ('".$uid."','".$s."','".date("U")."')";
         	//printf("<BR><BR><BR>".$query."<BR>");
-  	    	$result = mysql_query($query);
-  	    }
-  }
+  	    	$result = mysqli_query($MYSQLIOBJ, $query);
+	}  
+}
 
   function updateSession($uid, $s) {
   		// disabled auto-logout, session will expire in 48hours
@@ -1342,10 +1397,11 @@ exit;
  function getSessionUID($s) {
    global $IP;
    global $browser;
+   global $MYSQLIOBJ;
    $backvalue = -1;
-   $result = mysql_query("SELECT uid, ip, browser FROM session WHERE sessionid = '".$s."'");
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, "SELECT uid, ip, browser FROM session WHERE sessionid = '".$s."'");
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $uid = $f[0];
@@ -1380,19 +1436,19 @@ exit;
 
 
   function inviteNewUser($uid, $invite, $ip, $asadmin) {
+        global $MYSQLIOBJ;
         $pwd = getRND(4);
-
 		$derivedName = genNameFromEmail($invite);
 
-        if (!isAdmin($uid)) {
+        //if (!isAdmin($uid)) {
         	$asadmin = 0;
-        }
+        //}
 
 		// insert new session
     	$query = "INSERT INTO `user` (name, pwd, email, registered, invited, admin)
                  VALUES ('".$derivedName."','".md5($pwd)."','".$invite."','".date("U")."','".$uid."','".$asadmin."')";
        	//printf($query."<BR>");
-    	$result = mysql_query($query);
+    	$result = mysqli_query($MYSQLIOBJ, $query);
 
     	if ($result) {
 	    	sendEmailRegister($uid, $invite, $pwd, $ip);
@@ -1666,12 +1722,13 @@ exit;
 
  function sendMessage($broadcastmessage, $senderuid) {
  		   global $mid;
+		   global $MYSQLIOBJ;
  			// Go thru all users and send them the invitation
  		   $query = "SELECT uid FROM user";
     		   //printf($query."<BR>");
-    	 	   $result = mysql_query($query);
+    	 	   $result = mysqli_query($MYSQLIOBJ, $query);
     		   if ($result) {
- 				while($row_sections = mysql_fetch_array($result)) {
+ 				while($row_sections = mysqli_fetch_array($result)) {
  		    	  	$uid = $row_sections['uid'];
  		    	  	//printf("<BR>Sending changed venue mail to uid=:".$uid);
  		    	  	sendMessageMail($uid, $mid, $broadcastmessage, $senderuid);
@@ -1744,56 +1801,60 @@ exit;
  // ===========================================================================
 
  function suggest($uid, $sname, $saddress, $smodify) {
- 	    if ($smodify != "" && isAdmin($uid)) {
+ 	    global $MYSQLIOBJ; 
+		if ($smodify != "" && isAdmin($uid)) {
 		   $query = "UPDATE suggestion SET name = '".$sname."' WHERE sid = '".$smodify."'";
 		   //printf($query);
-   	       $result = mysql_query($query);
+   	       $result = mysqli_query($MYSQLIOBJ, $query);
 		   $query = "UPDATE suggestion SET address = '".$saddress."' WHERE sid = '".$smodify."'";
 		   //printf($query);
-   	       $result = mysql_query($query);
+   	       $result = mysqli_query($MYSQLIOBJ, $query);
  	    } else {
 	    	$query = "INSERT INTO `suggestion` (name, address, uid, suggested)
 	                 VALUES ('".$sname."','".$saddress."','".$uid."','".date("U")."')";
 	       	//printf($query."<BR>");
-	    	$result = mysql_query($query);
+	    	$result = mysqli_query($MYSQLIOBJ, $query);
  	    }
  }
 
 
  function removevote($uid, $sid) {
+    global $MYSQLIOBJ; 
     if (isAdmin($uid)) {
 	    $query = "DELETE FROM `suggestion` WHERE sid = '$sid'";
 	    //printf($query."<BR>");
-	    $result = mysql_query($query);
+	    $result = mysqli_query($MYSQLIOBJ, $query);
 
 	    $query = "DELETE FROM `vote` WHERE sid = '$sid'";
 	    //printf($query."<BR>");
-	    $result = mysql_query($query);
+	    $result = mysqli_query($MYSQLIOBJ, $query);
     }
  }
 
 
  function vote($uid, $sid, $vote) {
+    global $MYSQLIOBJ; 
     $uid = intval($uid);
     $sid = intval($sid);
 
     $query = "DELETE FROM `vote` WHERE uid = '$uid' and sid = '$sid'";
     //printf($query."<BR>");
-    $result = mysql_query($query);
+    $result = mysqli_query($MYSQLIOBJ, $query);
 
     if ($vote) {
     	$query = "INSERT INTO `vote` (sid, uid, voted)
                  VALUES ('".$sid."','".$uid."','".date("U")."')";
        	//printf($query."<BR>");
-    	$result = mysql_query($query);
+    	$result = mysqli_query($MYSQLIOBJ, $query);
     }
  }
 
  function voted($uid, $sid) {
+   global $MYSQLIOBJ; 
    $uid = intval($uid);
    $sid = intval($sid);
-   $result = mysql_query("SELECT uid FROM vote WHERE sid = '".$sid."' and uid = '".$uid."'");
-   if (mysql_num_rows($result) > 0) {
+   $result = mysqli_query($MYSQLIOBJ, "SELECT uid FROM vote WHERE sid = '".$sid."' and uid = '".$uid."'");
+   if (mysqli_num_rows($result) > 0) {
        return true;
    }
    return false;
@@ -1801,11 +1862,12 @@ exit;
 
 
  function chooseTopSuggestion() {
+   global $MYSQLIOBJ; 
    $query = "SELECT suggestion.sid, COUNT(vote.sid) AS votes FROM suggestion LEFT JOIN vote ON suggestion.sid = vote.sid WHERE chosen < '1' GROUP BY suggestion.sid ORDER BY votes DESC, suggested ASC ";
    //printf($query."<BR>");
-   $result = mysql_query($query);
-   if (mysql_num_rows($result) > 0) {
-       $row = mysql_fetch_array($result,MYSQL_ASSOC);
+   $result = mysqli_query($MYSQLIOBJ, $query);
+   if (mysqli_num_rows($result) > 0) {
+       $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
        $e = implode(" ",$row);
        $f = explode(" ",$e);
        $backvalue = $f[0];
@@ -1816,13 +1878,14 @@ exit;
 
  // Required to get backup venue suggestion id
  function getSidFromIndex($index) {
+   global $MYSQLIOBJ; 
    $query = "SELECT suggestion.sid, COUNT(vote.sid) AS votes FROM suggestion LEFT JOIN vote ON suggestion.sid = vote.sid WHERE chosen < '1' GROUP BY suggestion.sid ORDER BY votes DESC, suggested ASC ";
    //printf($query."<BR>");
    $sid = "-1";
-   $result = mysql_query($query);
-   $records = mysql_num_rows($result);
+   $result = mysqli_query($MYSQLIOBJ, $query);
+   $records = mysqli_num_rows($result);
    if ($records > 0) {
-	 while($row_sections = mysql_fetch_array($result)) {
+	 while($row_sections = mysqli_fetch_array($result)) {
 	     $index = $index - 1;
 	     if ($index <= 0) {
 			$sid = $row_sections['sid'];
@@ -1835,33 +1898,35 @@ exit;
 
 
  function changeVenue($mid, $oldsid, $newsid) {
- 	  // revert the old suggestion to that it has not been consumed
+ 	  global $MYSQLIOBJ; 
+		// revert the old suggestion to that it has not been consumed
 	  $query = "UPDATE suggestion SET chosen = '' WHERE sid = '".$oldsid."'";
 		     //printf($query);
-	   	     $result = mysql_query($query);
+	   	     $result = mysqli_query($MYSQLIOBJ, $query);
  		     // insert the sid
 		     $query = "UPDATE meeting SET sid = '".$newsid."' WHERE mid = '".$mid."'";
 		     //printf($query);
-	   	     $result = mysql_query($query);
+	   	     $result = mysqli_query($MYSQLIOBJ, $query);
  		     // tell the suggestion that it has been "consumed" now
 		     $query = "UPDATE suggestion SET chosen = '".$mid."' WHERE sid = '".$newsid."'";
 		     //printf($query);
-	   	     $result = mysql_query($query);
+	   	     $result = mysqli_query($MYSQLIOBJ, $query);
  }
 
 
 
  function buildSuggestions($uid, $s) {
+   global $MYSQLIOBJ;
    $query = "SELECT suggestion.sid, name, address, COUNT(vote.sid) AS votes FROM suggestion LEFT JOIN vote ON suggestion.sid = vote.sid WHERE chosen < '1' GROUP BY suggestion.sid ORDER BY votes DESC, suggested ASC ";
    //printf($query."<BR>");
 
 
-   $result = mysql_query($query);
-   $records = mysql_num_rows($result);
+   $result = mysqli_query($MYSQLIOBJ, $query);
+   $records = mysqli_num_rows($result);
    if ($records > 0) {
  	 printf("<table border='0' cellspacing='100'>");
 	 $i = 0;
-	 while($row_sections = mysql_fetch_array($result)) {
+	 while($row_sections = mysqli_fetch_array($result)) {
 	     $i = $i + 1;
 	     $sid = $row_sections['sid'];
 	     $sname = $row_sections['name'];
@@ -1919,7 +1984,7 @@ exit;
  $connection = opendb();
  $db = 0;
  if ($connection)  {
-    $db =  mysql_select_db($DBNAME);
+    $db =  mysqli_select_db($connection, $DBNAME);
  } else {
    	  echo '-CANNOT ACCESS DATABASE (1), PLEASE CONTACT THE SYSTEM ADMINISTARTOR AT '.$WEBMASTER;
    	  exit;

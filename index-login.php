@@ -304,7 +304,7 @@
 		}
 	}
 	else if (($filetype != "image/jpeg")&&($filetype != "image/pjpeg")) {
-    	$message = "Photo must be a JPEG and not larger than 2MB";
+    	$message = "Photo must be a JPEG";
  	    $errormsg = true;
 	}
 	else if (move_uploaded_file($_FILES['photofile']['tmp_name'], $uploadfile)) {
